@@ -9,21 +9,17 @@ import lsdviztools.lsdmapwrappers as lsdmw
 import lsdttparamselector as ps
 import rasterio
 from osgeo import gdal
-#%matplotlib inline
 
-
-
-
-
+import fiona
+from rasterio.mask import mask
 
 def metrics_execute(RasterFile):
     DataDirectory = "./"
-    #RasterFile = "hunt.tif"
     position=RasterFile.index('.')
     filename=RasterFile[0:position]
     gio.convert4lsdtt(DataDirectory, RasterFile,minimum_elevation=0.01,resolution=3)
 
-    lsdtt_parameters = {"surface_fitting_radius" : "3",
+    lsdtt_parameters = {"surface_fitting_radius" : "10",
                         "print_slope" : "true",
                         "print_curvature" : "true",
                         "print_dinf_drainage_area_raster": "true"}
@@ -45,19 +41,27 @@ def metrics_execute(RasterFile):
     }
     #    'outputType': gdal.GDT_Int16
 
+    _ = gdal.Translate(filename + '_ELEV.tif',filename + '_UTM.bil',**kwargs)
     _ = gdal.Translate(filename + '_SLOPE.tif',filename + '_UTM_SLOPE.bil',**kwargs)
     _ = gdal.Translate(filename + '_CURV.tif',filename + '_UTM_CURV.bil',**kwargs)
     _ = gdal.Translate(filename + '_dinf_area.tif',filename + '_UTM_dinf_area.bil',**kwargs)
     # ds = None
 
+    import os
+    for file in os.listdir("."):
+        if file.endswith(".bil"):
+            os.remove((os.path.join(".", file)))
+        if file.endswith(".hdr"):
+            os.remove((os.path.join(".", file)))
+    
     import fiona
     import rasterio
-    import rasterio.mask
+    from rasterio.mask import mask
 
     darea = rasterio.open(filename + '_dinf_area.tif')
     curve = rasterio.open(filename + '_CURV.tif')
     slope = rasterio.open(filename + '_SLOPE.tif')
-    elev = rasterio.open(filename + '.tif')
+    elev = rasterio.open(filename + '_ELEV.tif')
     msk_d = darea.read_masks()
     darea_data = darea.read(1, masked=True)
     curve_data = curve.read(1, masked=True)
@@ -93,11 +97,26 @@ def metrics_execute(RasterFile):
     ax1.set_xscale('log')
     ax1.set_xlim(1e1, 1e6)
 
-    with fiona.open("Tuscarora.shp", "r") as shapefile:
-        Tuscarora_mask = [feature["geometry"] for feature in shapefile]
+    
+    gdem = gdal.Open(filename + '_UTM.tif', gdal.GA_ReadOnly)
+    #gdem = gdal.Open(filename + '.tif', gdal.GA_ReadOnly)
+    proj=gdem.GetProjection()
+    proj=(proj[20:32])
+    #print(proj)
 
-    out_image, out_transform = rasterio.mask.mask(slope, Tuscarora_mask, crop=True)
-    out_meta = slope.meta
+    if '17N' in proj:
+        with fiona.open("Tuscarora_17N.shp", "r") as shapefile:
+            Tuscarora_mask = [feature["geometry"] for feature in shapefile]
+        print('17N')
+    elif '18N' in proj:
+        with fiona.open("Tuscarora_18N.shp", "r") as shapefile:
+            Tuscarora_mask = [feature["geometry"] for feature in shapefile]
+        print('18N')
+    else:
+        print('u r fucked')
+
+    out_image, out_transform = rasterio.mask.mask(elev, Tuscarora_mask, crop=True)
+    out_meta = elev.meta
     out_meta.update({"driver": "GTiff",
                       "height": out_image.shape[1],
                       "width": out_image.shape[2],
@@ -168,13 +187,6 @@ def metrics_execute(RasterFile):
                                 statistic='median',
                                 bins=bin_edges)
 
-    max_slope_t = max(med_stat_t_sa.statistic.tolist())
-    max_slope_da_t = med_stat_t_sa.bin_edges[med_stat_t_sa.statistic.tolist().index(max_slope_t)]
-    print(max_slope_da_t)
-    max_slope_nt = max(med_stat_nt_sa.statistic.tolist())
-    max_slope_da_nt = med_stat_nt_sa.bin_edges[med_stat_nt_sa.statistic.tolist().index(max_slope_nt)]
-    print(max_slope_da_nt)
-
     import pandas as pd
 
 
@@ -191,13 +203,6 @@ def metrics_execute(RasterFile):
 
 
     df.to_csv(filename + '_stats.csv',columns=df.columns, index=False)
-
-    import os
-    for file in os.listdir("."):
-        if file.endswith(".bil"):
-            os.remove((os.path.join(".", file)))
-        if file.endswith(".hdr"):
-            os.remove((os.path.join(".", file)))
 
 
 
