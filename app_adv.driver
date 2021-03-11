@@ -1,0 +1,40 @@
+#Parameters for advanced hillslope analysis
+
+read path: ./ 
+
+write path: ./ 
+
+read fname: tile_20
+write fname: t20
+
+# this removes everything bellow a minimum elevation (default = 0)
+remove_seas: true
+
+# lower = dense network and higher = sparse network
+threshold_contributing_pixels: 500
+#joanmarie consider this??
+
+#Table 4
+RemoveSteepHillslopes: false
+
+# The parameter needed for switching on hilltops metrics
+run_HFR_analysis: true
+print_hillslope_traces: true
+hillslope_trace_thinning: 10
+
+#Table 7
+print_basin_raster: true
+maximum_basin_size_pixels: 100000000
+#find_complete_basins_in_window: true
+#find_largest_complete_basins: false
+#test_drainage_boundaries: false
+
+write_hillshade: true
+#writng some outputs, you can use other options from the documentations
+write_hillslope_length: true 
+write_hilltops: true
+
+#Useful to check the channel network
+print_channels_to_csv: true
+
+#end of file
