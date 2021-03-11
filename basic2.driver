@@ -1,0 +1,15 @@
+# Parameters for extracting simple surface metrics
+# Comments are preceeded by the hash symbol
+# Documentation can be found at: https://lsdtopotools.github.io/LSDTT_documentation/LSDTT_basic_usage.html 
+
+# These are parameters for the file i/o
+read fname: wv
+write fname: wv_2
+channel heads fname: NULL
+
+# Parameters for surface metrics
+surface_fitting_radius: 11
+print_slope: true
+print_aspect: true
+print_curvature: true
+print_tangential_curvature: true

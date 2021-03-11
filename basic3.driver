@@ -1,0 +1,19 @@
+# Parameters for extracting simple surface metrics
+# Comments are preceeded by the hash symbol
+# Documentation can be found at: https://lsdtopotools.github.io/LSDTT_documentation/LSDTT_basic_usage.html 
+
+# These are parameters for the file i/o
+read fname: wv
+write fname: wv_3
+channel heads fname: NULL
+
+# Parameters for drainage area
+min_slope_for_fill: 0.0001
+print_dinf_drainage_area_raster: true
+print_MD_drainage_area_raster: true
+print_d8_drainage_area_raster: true
+print_distance_from_outlet: true
+
+# Basic channel network
+threshold_contributing_pixels: 5000
+print_channels_to_csv: true
